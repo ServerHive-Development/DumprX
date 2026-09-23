@@ -26,6 +26,11 @@ This fork maintained by [ServerHive Development](https://github.com/ServerHive-D
 4. **Resilient `extract-ikconfig` Handling**:
    - Bundles an authentic upstream copy of `extract-ikconfig` and prevents corrupting local scripts when upstream GitHub raw requests encounter HTTP 429 rate-limiting.
 
+5. **Device Tree `basename` & Ramdisk Fixes**:
+   - Resolves `basename: missing operand` and `ls: cannot access ...` errors during device tree (`dtb`) info generation when `boot`/`recovery` images have non-standard blob layouts.
+   - Adds `-y` non-interactive flags to ramdisk extraction to avoid terminal hangs on existing directories.
+   - Automatically provisions `uvx` wrapper when `uv` is installed to ensure TWRP tree generator tools function seamlessly.
+
 ## What this really is
 
 You might've used firmware extractor via dumpyara from https://github.com/AndroidDumps/. This toolkit is revamped edition of the tools with some improvements and feature additions.

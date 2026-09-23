@@ -820,7 +820,10 @@ for image in boot vendor_boot vendor_kernel_boot init_boot recovery; do
 
 		# Create info.txt
 		[[ -f "${image}"/kernel ]] && echo "kernel: kernel" > ${image}/info.txt
-		[[ -d "${image}"/dtb ]] && echo "dtb: dtb/$(basename $(ls ${image}/dtb/01*.dtb))" >> ${image}/info.txt
+		if [[ -d "${image}/dtb" ]]; then
+			first_dtb=$(find "${image}/dtb" -type f -name "*.dtb" 2>/dev/null | head -1)
+			[[ -n "${first_dtb}" ]] && echo "dtb: dtb/$(basename "${first_dtb}")" >> "${image}"/info.txt
+		fi
 		[[ -d "${image}"/ramdisk ]] && echo "ramdisk: ramdisk/" >> ${image}/info.txt
 		[[ -d "${image}"/recovery_ramdisk ]] && echo "recovery_ramdisk: recovery_ramdisk/" >> ${image}/info.txt
 		uv run ${BOOTIMG_INFO} "${image}.img" >> "${image}"/info.txt
