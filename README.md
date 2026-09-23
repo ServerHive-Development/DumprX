@@ -64,7 +64,10 @@ For any other UNIX Distributions, please refer to internal [Setup File](setup.sh
 
 ## Prepare toolkit dependencies / requirements
 
-To prepare for this toolkit, run [Setup File](setup.sh) at first, which is needed only one time. After that, run [Main Script](dumper.sh) with proper argument.
+> [!NOTE]
+> **ServerHive Host Users:** All dependencies, binaries, and extraction utilities are **already pre-installed on the host machine**. You **do not need to run `setup.sh`**; you can run `./dumper.sh` directly.
+
+For external or clean standalone environments, run [Setup File](setup.sh) once to install system dependencies, or install packages manually via your distribution package manager.
 
 ## Usage
 

@@ -35,6 +35,21 @@ printf "\e[32m" && __bannerTop && printf "\e[0m"
 # Minor Sleep
 sleep 1
 
+# Check if dependencies are already installed on host machine
+if (command -v 7z >/dev/null 2>&1 || command -v 7zz >/dev/null 2>&1) && command -v fsck.erofs >/dev/null 2>&1 && command -v uv >/dev/null 2>&1; then
+    echo -e "${GREEN}>> Notice: All required dependencies are already pre-installed on this host machine.${NORMAL}"
+    echo -e "${BLUE}>> You do not need to run setup.sh. You can run ./dumper.sh directly.${NORMAL}"
+    if [[ ! -x "${HOME}/.local/bin/uvx" ]]; then
+        mkdir -p "${HOME}/.local/bin" 2>/dev/null
+        cat << "EOF" > "${HOME}/.local/bin/uvx" 2>/dev/null
+#!/bin/sh
+exec uv tool run "$@"
+EOF
+        chmod +x "${HOME}/.local/bin/uvx" 2>/dev/null
+    fi
+    exit 0
+fi
+
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
 
     if command -v apt > /dev/null 2>&1; then
