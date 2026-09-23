@@ -786,13 +786,13 @@ for image in boot vendor_boot vendor_kernel_boot init_boot recovery; do
 
         ## Retrive image's ramdisk, and extract it
 		ramdiskfile=$(find "${image}" -type f -name "ramdisk.cpio" | head -1)
-		${BIN_7ZZ} -snld x "${ramdiskfile}" -o"${image}/ramdisk" >> /dev/null 2>&1 || \
+		${BIN_7ZZ} -snld -y x "${ramdiskfile}" -o"${image}/ramdisk" >> /dev/null 2>&1 || \
 			echo "Failed to extract ramdisk."
 
         ## Retrive recovery ramdisk, and extract it
 		recoveryramdiskfile=$(find "${image}" -type f -name "recovery.cpio" | head -1)
 		[[ ! -z "${recoveryramdiskfile}" ]] && {
-			${BIN_7ZZ} -snld x "${recoveryramdiskfile}" -o"${image}/recovery_ramdisk" >> /dev/null 2>&1 || \
+			${BIN_7ZZ} -snld -y x "${recoveryramdiskfile}" -o"${image}/recovery_ramdisk" >> /dev/null 2>&1 || \
 			echo "Failed to extract recovery ramdisk."
 		}
 
