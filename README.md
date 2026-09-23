@@ -29,7 +29,10 @@ This fork maintained by [ServerHive Development](https://github.com/ServerHive-D
 5. **Device Tree `basename` & Ramdisk Fixes**:
    - Resolves `basename: missing operand` and `ls: cannot access ...` errors during device tree (`dtb`) info generation when `boot`/`recovery` images have non-standard blob layouts.
    - Adds `-y` non-interactive flags to ramdisk extraction to avoid terminal hangs on existing directories.
-   - Automatically provisions `uvx` wrapper when `uv` is installed to ensure TWRP tree generator tools function seamlessly.
+
+6. **Pre-flight Dependency Verification (`uv` and `uvx`)**:
+   - Performs automated pre-flight checks for `uv` and `uvx` prior to running the dumping workflow.
+   - Automatically auto-provisions or symlinks `uvx` when `uv` is available, ensuring `vmlinux-to-elf`, `extract-dtb`, and `twrpdtgen` work reliably out-of-the-box.
 
 ## What this really is
 

@@ -83,11 +83,18 @@ fi
 
 sleep 1
 
-# Install `uv`
-if ! command -v uv > /dev/null ; then
+# Install and configure `uv` and `uvx`
+if ! command -v uv > /dev/null 2>&1; then
     echo -e ${BLUE}">> Installing uv for python packages..."${NORMAL}
     sleep 1
     bash -c "$(curl -sL https://astral.sh/uv/install.sh)" || abort "Setup Failed!"
+fi
+
+# Ensure uvx is available
+if command -v uv > /dev/null 2>&1 && ! command -v uvx > /dev/null 2>&1; then
+    mkdir -p "${HOME}/.local/bin" 2>/dev/null
+    ln -sf "$(command -v uv)" "${HOME}/.local/bin/uvx" 2>/dev/null
+    export PATH="${HOME}/.local/bin:${PATH}"
 fi
 
 # Done!

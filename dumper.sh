@@ -61,6 +61,43 @@ else
 	_usage			# Output Usage By Default
 fi
 
+# Check and ensure required python tooling dependencies (uv and uvx)
+if ! command -v uv > /dev/null 2>&1; then
+	if [[ -x "${HOME}/.local/bin/uv" ]]; then
+		export PATH="${HOME}/.local/bin:${PATH}"
+	elif [[ -x "/usr/bin/uv" ]]; then
+		export PATH="/usr/bin:${PATH}"
+	fi
+fi
+
+if ! command -v uv > /dev/null 2>&1; then
+	printf "\n  \e[1;33m [!] Notice: 'uv' is not in PATH. Attempting automatic installation...\e[0m\n"
+	if curl -LsSf https://astral.sh/uv/install.sh | sh >/dev/null 2>&1; then
+		export PATH="${HOME}/.local/bin:${PATH}"
+	fi
+fi
+
+if ! command -v uv > /dev/null 2>&1; then
+	printf "\n  \e[1;31m [ERROR] 'uv' is required for vmlinux-to-elf, extract-dtb, and twrpdtgen.\e[0m\n"
+	printf "  Please install uv: curl -LsSf https://astral.sh/uv/install.sh | sh\n\n"
+	exit 1
+fi
+
+if ! command -v uvx > /dev/null 2>&1; then
+	if [[ -x "${HOME}/.local/bin/uvx" ]]; then
+		export PATH="${HOME}/.local/bin:${PATH}"
+	else
+		mkdir -p "${HOME}/.local/bin" 2>/dev/null
+		ln -sf "$(command -v uv)" "${HOME}/.local/bin/uvx" 2>/dev/null
+		export PATH="${HOME}/.local/bin:${PATH}"
+	fi
+fi
+
+if ! command -v uvx > /dev/null 2>&1; then
+	uvx() { uv tool run "$@"; }
+	export -f uvx
+fi
+
 # Set Base Project Directory
 PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 if echo "${PROJECT_DIR}" | grep " "; then
