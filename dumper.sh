@@ -944,20 +944,21 @@ for p in $PARTITIONS; do
 			continue
 		fi
 
-		# Fall back to mount loop
-		echo "f2fs-extractor failed, trying mount loop..."
-	fi
-
-	if sudo mount -o loop -t auto "$p.img" "$p" 2>/dev/null; then
-		mkdir -p "${p}_"
-		sudo cp -rf "${p}/." "${p}_/"
-		sudo umount "$p"
-		sudo cp -rf "${p}_/." "$p/"
-		sudo rm -rf "${p}_"
-		sudo chown -R "$(whoami)" "$p"
-		chmod -R u+rwX "$p"
-		rm -f "$p.img"
-		continue
+		# Fall back to mount loop only if running as root or passwordless sudo is available
+		if [[ "$EUID" -eq 0 ]] || sudo -n true 2>/dev/null; then
+			echo "f2fs-extractor failed, trying mount loop..."
+			if sudo mount -o loop -t auto "$p.img" "$p" 2>/dev/null; then
+				mkdir -p "${p}_"
+				sudo cp -rf "${p}/." "${p}_/"
+				sudo umount "$p" 2>/dev/null || true
+				sudo cp -rf "${p}_/." "$p/"
+				sudo rm -rf "${p}_"
+				sudo chown -R "$(whoami)" "$p" 2>/dev/null || true
+				chmod -R u+rwX "$p" 2>/dev/null || true
+				rm -f "$p.img"
+				continue
+			fi
+		fi
 	fi
 
 	echo "ERROR: Could not extract '$p' partition. Unsupported filesystem."
@@ -1244,8 +1245,8 @@ fi
 rm -rf $(find $twrpdtout -type d -name ".git")
 
 # copy file names
-chown "$(whoami)" ./* -R
-chmod -R u+rwX ./*		#ensure final permissions
+chown "$(whoami)" ./* -R 2>/dev/null || true
+chmod -R u+rwX ./* 2>/dev/null || true		#ensure final permissions
 find "$OUTDIR" -type f -printf '%P\n' | sort | grep -v ".git/" > "$OUTDIR"/all_files.txt
 
 # Generate LineageOS Trees

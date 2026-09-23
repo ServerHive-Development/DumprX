@@ -34,6 +34,11 @@ This fork maintained by [ServerHive Development](https://github.com/ServerHive-D
    - Performs automated pre-flight checks for `uv` and `uvx` prior to running the dumping workflow.
    - Automatically auto-provisions or symlinks `uvx` when `uv` is available, ensuring `vmlinux-to-elf`, `extract-dtb`, and `twrpdtgen` work reliably out-of-the-box.
 
+7. **Fully Rootless Execution**:
+   - Runs 100% in userspace without requiring root privileges or interactive `sudo` prompts.
+   - All partition unpacking is handled via userspace extractors (`fsck.erofs`, `7zz`, `f2fs-extractor`, and `payload-dumper-go`).
+   - Legacy `mount -o loop` and `chown` calls are guarded by non-interactive checks (`sudo -n`) and silenced to prevent stalling automated pipelines in unprivileged environments.
+
 ## What this really is
 
 You might've used firmware extractor via dumpyara from https://github.com/AndroidDumps/. This toolkit is revamped edition of the tools with some improvements and feature additions.
