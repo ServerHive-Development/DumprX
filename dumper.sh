@@ -93,9 +93,9 @@ for tool_slug in "${EXTERNAL_TOOLS[@]}"; do
 done
 
 # Retrive 'extract-ikconfig' from torvalds/linux
-if ! [[ -f "${UTILSDIR}"/extract-ikconfig ]]; then
-    curl -s -Lo "${UTILSDIR}"/extract-ikconfig https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/scripts/extract-ikconfig
-    chmod +x "${UTILSDIR}"/extract-ikconfig
+if ! [[ -f "${UTILSDIR}"/extract-ikconfig ]] || grep -q "429: This request was rate-limited" "${UTILSDIR}"/extract-ikconfig 2>/dev/null; then
+    curl -s -Lo "${UTILSDIR}"/extract-ikconfig https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/scripts/extract-ikconfig 2>/dev/null
+    chmod +x "${UTILSDIR}"/extract-ikconfig 2>/dev/null
 fi
 
 ## See README.md File For Program Credits
@@ -138,7 +138,17 @@ fi
 MEGAMEDIADRIVE_DL="${UTILSDIR}"/downloaders/mega-media-drive_dl.sh
 
 # EROFS
-FSCK_EROFS=${UTILSDIR}/bin/fsck.erofs
+if command -v fsck.erofs > /dev/null 2>&1; then
+	FSCK_EROFS=$(command -v fsck.erofs)
+elif [[ -x "${UTILSDIR}/bin/fsck.erofs" ]]; then
+	FSCK_EROFS="${UTILSDIR}/bin/fsck.erofs"
+elif [[ -x "${PROJECT_DIR}/../Firmware_extractor/tools/fsck.erofs" ]]; then
+	FSCK_EROFS="${PROJECT_DIR}/../Firmware_extractor/tools/fsck.erofs"
+elif [[ -x "${HOME}/Firmware_extractor/tools/fsck.erofs" ]]; then
+	FSCK_EROFS="${HOME}/Firmware_extractor/tools/fsck.erofs"
+else
+	FSCK_EROFS="${UTILSDIR}/bin/fsck.erofs"
+fi
 
 # F2FS
 F2FS_EXTRACTOR="${UTILSDIR}"/bin/f2fs-extractor
@@ -766,7 +776,12 @@ for image in boot vendor_boot vendor_kernel_boot init_boot recovery; do
         # Unpack image's content
         echo "Extracting '${image}' content..."
 		cd "${image}"
-        ${MAGISKBOOT} unpack ../"${image}.img" > /dev/null
+        if ! ${MAGISKBOOT} unpack ../"${image}.img" > /dev/null 2>&1; then
+		UNPACKBOOTIMG=$(command -v unpackbootimg 2>/dev/null || ls "${UTILSDIR}"/bin/unpackbootimg "${PROJECT_DIR}"/../Firmware_extractor/tools/unpackbootimg "${HOME}"/Firmware_extractor/tools/unpackbootimg 2>/dev/null | head -1)
+		if [[ -x "${UNPACKBOOTIMG}" ]]; then
+			"${UNPACKBOOTIMG}" -i ../"${image}.img" -o . > /dev/null 2>&1
+		fi
+	fi
 		cd -
 
         ## Retrive image's ramdisk, and extract it
@@ -861,28 +876,39 @@ for p in $PARTITIONS; do
 	mkdir -p "$p" && rm -rf "${p:?}"/*
 
 	# Try 7z first
-	if "${BIN_7ZZ}" x -snld "$p.img" -y -o"$p/" > /dev/null 2>&1; then
+	"${BIN_7ZZ}" x -snld "$p.img" -y -o"$p/" > /dev/null 2>&1
+	if [[ $? -eq 0 ]] || [[ -n "$(ls -A "$p" 2>/dev/null)" && "$p" == "modem" ]]; then
 		rm -f "$p.img"
 		continue
 	fi
 
 	# Try fsck.erofs (for EROFS images)
-	echo "7z failed, trying fsck.erofs..."
-	if [[ "$p" != "modem" ]] && "${FSCK_EROFS}" --extract="$p" "$p.img" > /dev/null 2>&1; then
-		rm -f "$p.img"
-		continue
+	if [[ "$p" != "modem" ]]; then
+		echo "7z failed, trying fsck.erofs..."
+		erofs_extracted=false
+		for erofs_cmd in "${FSCK_EROFS}" $(command -v fsck.erofs 2>/dev/null) "${UTILSDIR}"/bin/fsck.erofs "${PROJECT_DIR}"/../Firmware_extractor/tools/fsck.erofs "${HOME}"/Firmware_extractor/tools/fsck.erofs; do
+			if [[ -x "${erofs_cmd}" ]] && "${erofs_cmd}" --extract="$p" "$p.img" > /dev/null 2>&1; then
+				erofs_extracted=true
+				break
+			fi
+		done
+		if [[ "$erofs_extracted" == "true" ]]; then
+			rm -f "$p.img"
+			continue
+		fi
+
+		# Try f2fs-extractor (for F2FS images)
+		echo "fsck.erofs failed, trying f2fs-extractor..."
+		if "${F2FS_EXTRACTOR}" extract "$p.img" "$p" > /dev/null 2>&1; then
+			rm -f "$p.img"
+			continue
+		fi
+
+		# Fall back to mount loop
+		echo "f2fs-extractor failed, trying mount loop..."
 	fi
 
-	# Try f2fs-extractor (for F2FS images)
-	echo "fsck.erofs failed, trying f2fs-extractor..."
-	if [[ "$p" != "modem" ]] && "${F2FS_EXTRACTOR}" extract "$p.img" "$p" > /dev/null 2>&1; then
-		rm -f "$p.img"
-		continue
-	fi
-
-	# Fall back to mount loop
-	echo "f2fs-extractor failed, trying mount loop..."
-	if sudo mount -o loop -t auto "$p.img" "$p"; then
+	if sudo mount -o loop -t auto "$p.img" "$p" 2>/dev/null; then
 		mkdir -p "${p}_"
 		sudo cp -rf "${p}/." "${p}_/"
 		sudo umount "$p"

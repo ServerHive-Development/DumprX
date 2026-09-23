@@ -7,6 +7,25 @@
 </div>
 
 
+## ServerHive Fork Improvements & Fixes
+
+This fork maintained by [ServerHive Development](https://github.com/ServerHive-Development) introduces key reliability fixes for modern Android 13+ firmware extraction:
+
+1. **Multi-Binary `fsck.erofs` Support & Automatic Fallback**:
+   - Automatically detects and prioritizes modern system `fsck.erofs` (e.g. `erofs-utils` 1.7+ / 1.8+) to support newer EROFS features including chunked images, 16K/64K block sizes, and modern compression algorithms (zstd, lz4hc, deflate).
+   - Gracefully falls back across bundled `utils/bin/fsck.erofs`, local system binaries, and `Firmware_extractor`/`dumpyara` tools if the primary binary fails or encounters unsupported features.
+   - Eliminates false-positive `fsck.erofs failed` logs when non-EROFS partitions are processed.
+
+2. **Robust Modem / FAT Partition Extraction**:
+   - Fixes handling of FAT-formatted partitions (e.g. `modem.img`) where 7-Zip emits non-fatal warnings or trailing archive errors (exit code 2) while successfully extracting partition files.
+   - Verifies whether files were extracted into the target directory before falling back to `f2fs-extractor` or invoking interactive `sudo mount` loops that stall automated execution.
+
+3. **`unpackbootimg` Fallback on `magiskboot` Failures**:
+   - Catches `magiskboot unpack` crashes (such as illegal instruction errors on certain `vendor_boot` header versions) and automatically falls back to `unpackbootimg`.
+
+4. **Resilient `extract-ikconfig` Handling**:
+   - Bundles an authentic upstream copy of `extract-ikconfig` and prevents corrupting local scripts when upstream GitHub raw requests encounter HTTP 429 rate-limiting.
+
 ## What this really is
 
 You might've used firmware extractor via dumpyara from https://github.com/AndroidDumps/. This toolkit is revamped edition of the tools with some improvements and feature additions.
